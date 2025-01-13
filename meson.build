@@ -1899,6 +1899,10 @@ if get_option('tests')
   subdir('t')
 endif
 
+if get_option('fuzzers')
+  subdir('oss-fuzz')
+endif
+
 subdir('bin-wrappers')
 if get_option('docs') != []
   subdir('Documentation')
