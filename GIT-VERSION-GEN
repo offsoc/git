@@ -1,7 +1,5 @@
 #!/bin/sh
 
-DEF_VER=v2.48.0
-
 LF='
 '
 
@@ -21,6 +19,13 @@ then
 	exit 1
 fi
 
+if test -n "$OUTPUT" && test -n "$MESON_DIST_ROOT"
+then
+    OUTPUT="$MESON_DIST_ROOT/$OUTPUT"
+fi
+
+DEF_VER=$(cat "$SOURCE_DIR"/GIT-VERSION)
+
 # Protect us from reading Git version information outside of the Git directory
 # in case it is not a repository itself, but embedded in an unrelated
 # repository.
@@ -33,19 +38,15 @@ then
 	# then try git-describe, then default.
 	if test -f "$SOURCE_DIR"/version
 	then
-		VN=$(cat "$SOURCE_DIR"/version) || VN="$DEF_VER"
+		VN=$(cat "$SOURCE_DIR"/version) && VN=${VN#GIT_VERSION=} || VN="$DEF_VER"
 	elif {
 			test -d "$SOURCE_DIR/.git" ||
 			test -d "${GIT_DIR:-.git}" ||
 			test -f "$SOURCE_DIR"/.git;
 		} &&
-		VN=$(git -C "$SOURCE_DIR" describe --match "v[0-9]*" HEAD 2>/dev/null) &&
+		VN=$(git -C "$SOURCE_DIR" describe --match --dirty "v[0-9]*" 2>/dev/null) &&
 		case "$VN" in
 		*$LF*) (exit 1) ;;
-		v[0-9]*)
-			git -C "$SOURCE_DIR" update-index -q --refresh
-			test -z "$(git -C "$SOURCE_DIR" diff-index --name-only HEAD --)" ||
-			VN="$VN-dirty" ;;
 		esac
 	then
 		VN=$(echo "$VN" | sed -e 's/-/./g');
